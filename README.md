@@ -1,9 +1,9 @@
-# node-ini-parser
+# ini-parser-encoder
 A helper to parse ini file for nodejs
 
 # USAGE
 `
-npm install node-ini-parser
+npm install ini-parser-encoder
 `
 
 `

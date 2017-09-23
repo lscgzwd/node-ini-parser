@@ -1,5 +1,5 @@
 {
-  "name": "node-ini-parser",
+  "name": "ini-parser-encoder",
   "version": "0.0.1",
   "description": "A helper to parse,encode ini file for nodejs",
   "main": "index.js",
