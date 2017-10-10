@@ -17,24 +17,24 @@ const REG_LINE_COMMENT = /^\s*[#;]+.*/;
 const REG_SECTION = /^\s*\[\s*([^\]]+?)\s*\]\s*$/;
 const REG_LINE_PARAMS = /^\s*([^=]+?)\s*=\s*[\'\"]{0,1}([^;#\'\"]+?)[\'\"]{0,1}\s*([#;]+.*){0,}$/;
 const REG_SUB_KEY = /^([^\[]+)\[[\'\"]{0,1}([^\]]*?)[\'\"]{0,1}\]$/;
-const DEFAULT_SUB_SEPERATOR = '.';
-const PROCESS_SETION = true;
+const DEFAULT_SUB_SEPARATOR = '.';
+const PROCESS_SECTION = true;
 const DEFAULT_FILE_ENCODING = 'utf-8';
 /**
  * ini 解析方法
  * @param string data 
- * @param string subSeperator
+ * @param string subSeparator
  * @param boolean processSection
  */
-function parse(data, subSeperator, processSection) {
+function parse(data, subSeparator, processSection) {
     var value = {};
     var lines = data.split(/\r\n|\r|\n/);
     var section = null;
-    if (!subSeperator) {
-        subSeperator = DEFAULT_SUB_SEPERATOR;
+    if (!subSeparator) {
+        subSeparator = DEFAULT_SUB_SEPARATOR;
     }
     if (typeof(processSection) !== 'boolean') {
-        processSection = PROCESS_SETION;
+        processSection = PROCESS_SECTION;
     }
     var subLength = {};
     lines.forEach(function(line) {
@@ -73,8 +73,8 @@ function parse(data, subSeperator, processSection) {
                         value[key][subKey] = val;
                     }
                 }
-            } else if(key.indexOf(subSeperator) !== -1) {
-                var keys = key.split(subSeperator);
+            } else if(key.indexOf(subSeparator) !== -1) {
+                var keys = key.split(subSeparator);
                 var subData = {};
                 if (section && processSection) {
                     subData = value[section];
@@ -121,39 +121,30 @@ function parseValue(val) {
         val = true;
     } else if (val == 'false') {
         val = false;
-    }
-    if (/[^\d\.]+/.test(val)) {
-
-    } else {
+    } else if(/^\d+(\.\d+){0,1}$/.test(val)) {
         val = Number(val);
     }
     return val;
 }
-function parseFileSync($file, subSeperator, processSection, fileEncoding) {
+function parseFileSync(file, subSeparator, processSection, fileEncoding) {
     if (!fileEncoding) {
         fileEncoding = DEFAULT_FILE_ENCODING;
     }
-    return parse(fs.readFileSync($file, fileEncoding, function(err, data) {
-        if (err) {
-            callback(err);
-        } else {
-            callback(null, parse);
-        }
-    }));
+    return parse(fs.readFileSync(file, fileEncoding),subSeparator, processSection);
 }
-function parseFile(file, callback, subSeperator, processSection, fileEncoding) {
+function parseFile(file, callback, subSeparator, processSection, fileEncoding) {
     if (!fileEncoding) {
         fileEncoding = DEFAULT_FILE_ENCODING;
     }
-    fs.readFileSync($file, fileEncoding, function(err, data) {
+    fs.readFileSync(file, fileEncoding, function(err, data) {
         if (err) {
             callback(err);
         } else {
-            callback(null, parse(data));
+            callback(null, parse(data, subSeparator, processSection));
         }
     });
 }
-function encode(obj, subSeperator) {
+function encode(obj, subSeparator) {
     var inis = [];
     var notSectionInis = [];
     var seperator = ' = ';
@@ -161,7 +152,7 @@ function encode(obj, subSeperator) {
         obj.forEach(function(item) {
             // only object allowed
             if (typeof(item) == 'object' && !Array.isArray(item)) {
-                encodeObj(item, '', inis, seperator, subSeperator);
+                encodeObj(item, '', inis, seperator, subSeparator);
             }
         });
     } else if (typeof(obj) == 'object' && obj != null) {
@@ -187,7 +178,7 @@ function encode(obj, subSeperator) {
                         encodeArray(section, val, seperator, notSectionInis);
                     } else {
                         inis.push('[' + section + ']');
-                        encodeObj(val, '', inis, seperator, subSeperator);
+                        encodeObj(val, '', inis, seperator, subSeparator);
                     }
                     break;
                 default:
@@ -197,10 +188,10 @@ function encode(obj, subSeperator) {
     }
     return notSectionInis.join("\n") + inis.join("\n");
 }
-function encodeObj(obj, k, inis, seperator, subSeperator) {
+function encodeObj(obj, k, inis, seperator, subSeparator) {
     Object.keys(obj).forEach(function(ok) {
         var val = obj[ok];
-        k = k ? k + subSeperator + ok : ok;
+        k = k ? k + subSeparator + ok : ok;
         switch(typeof(val)) {
             case 'string':
             case 'number':
@@ -220,7 +211,7 @@ function encodeObj(obj, k, inis, seperator, subSeperator) {
                 } else if (Array.isArray(val)) {
                     encodeArray(k, val, seperator, inis);
                 } else {
-                    encodeObj(val, k, inis, seperator, subSeperator);
+                    encodeObj(val, k, inis, seperator, subSeparator);
                 }
                 break;
             default:
