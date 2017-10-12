@@ -52,10 +52,10 @@ itemobject.subobj.a = 1
 itemobject.subobj.b.d = 2
 itemobject.subobj.b.e = 2
 [mysql]
-database="qiye_mis"
-username="rd_rw"
-password="vM7Ye2E7NRehw=="
-host=100.73.21.58
+database="mis"
+username="rd"
+password="ABCDD=="
+host=100.0.0.2
 port="3306"
 charset= "utf8"
 ```
