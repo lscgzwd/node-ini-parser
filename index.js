@@ -20,13 +20,18 @@ const REG_SUB_KEY = /^([^\[]+)\[[\'\"]{0,1}([^\]]*?)[\'\"]{0,1}\]$/;
 const DEFAULT_SUB_SEPARATOR = '.';
 const PROCESS_SECTION = true;
 const DEFAULT_FILE_ENCODING = 'utf-8';
+const PARSE_NUMBER_AS_STRING = true;
 /**
  * ini 解析方法
  * @param string data 
  * @param string subSeparator
  * @param boolean processSection
+ * @param boolean returnNumberAsString
  */
-function parse(data, subSeparator, processSection) {
+function parse(data, subSeparator, processSection, returnNumberAsString) {
+    if (typeof returnNumberAsString === 'undefined') {
+        returnNumberAsString = PARSE_NUMBER_AS_STRING;
+    }
     var value = {};
     var lines = data.split(/\r\n|\r|\n/);
     var section = null;
@@ -36,7 +41,6 @@ function parse(data, subSeparator, processSection) {
     if (typeof(processSection) !== 'boolean') {
         processSection = PROCESS_SECTION;
     }
-    var subLength = {};
     lines.forEach(function(line) {
         if (REG_LINE_PARAMS.test(line)) {
             var match = line.match(REG_LINE_PARAMS);
@@ -46,7 +50,7 @@ function parse(data, subSeparator, processSection) {
                 key = subMatch[1];
                 var subKey = subMatch[2];
                 // A[] = B
-                var val = parseValue(match[2]);
+                var val = parseValue(match[2], returnNumberAsString);
                 if (subKey.length == 0) {
                     if (section && processSection) {
                         if (!value[section][key]) {
@@ -81,7 +85,7 @@ function parse(data, subSeparator, processSection) {
                 } else {
                     subData = value;
                 }
-                var val = parseValue(match[2]);
+                var val = parseValue(match[2], returnNumberAsString);
                 var i = 0;
                 keys.forEach(function(subKey) {
                     i++;
@@ -95,7 +99,7 @@ function parse(data, subSeparator, processSection) {
                     subData = subData[subKey];
                 });
             } else {
-                var val = parseValue(match[2]);
+                var val = parseValue(match[2], returnNumberAsString);
                 
                 if (section && processSection) {
                     value[section][match[1]] = val;
@@ -108,31 +112,30 @@ function parse(data, subSeparator, processSection) {
             value[match[1]] = {};
             section = match[1];
         } else if (REG_LINE_COMMENT.test(line)) {
-            console.log(line);
             return;
         } else {
-            console.log(line);
+            console.log('un_expect_line:' + line);
         }
     });
     return value;
 }
-function parseValue(val) {
+function parseValue(val, returnNumberAsString) {
     if (val == 'true') {
         val = true;
     } else if (val == 'false') {
         val = false;
-    } else if(/^\d+(\.\d+){0,1}$/.test(val)) {
+    } else if(/^\d+(\.\d+){0,1}$/.test(val) && returnNumberAsString === false) {
         val = Number(val);
     }
     return val;
 }
-function parseFileSync(file, subSeparator, processSection, fileEncoding) {
+function parseFileSync(file, subSeparator, processSection, fileEncoding, returnNumberAsString) {
     if (!fileEncoding) {
         fileEncoding = DEFAULT_FILE_ENCODING;
     }
-    return parse(fs.readFileSync(file, fileEncoding),subSeparator, processSection);
+    return parse(fs.readFileSync(file, fileEncoding),subSeparator, processSection, returnNumberAsString);
 }
-function parseFile(file, callback, subSeparator, processSection, fileEncoding) {
+function parseFile(file, callback, subSeparator, processSection, fileEncoding, returnNumberAsString) {
     if (!fileEncoding) {
         fileEncoding = DEFAULT_FILE_ENCODING;
     }
@@ -140,7 +143,7 @@ function parseFile(file, callback, subSeparator, processSection, fileEncoding) {
         if (err) {
             callback(err);
         } else {
-            callback(null, parse(data, subSeparator, processSection));
+            callback(null, parse(data, subSeparator, processSection, returnNumberAsString));
         }
     });
 }
